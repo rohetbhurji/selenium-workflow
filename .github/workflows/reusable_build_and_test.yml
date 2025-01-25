@@ -1,0 +1,40 @@
+name: Build and Test
+
+on:
+  workflow_call:
+    inputs:
+      env_name:
+        description: 'The environment name (e.g., DEV, SIT)'
+        required: true
+        type: string
+      cucumber_tag:
+        description: 'The Cucumber tag to filter tests (e.g., @DEV, @SIT)'
+        required: true
+        type: string
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Build Project
+        run: mvn clean install
+
+      - name: Run Cucumber Tests
+        run: mvn test -Dcucumber.filter.tags="${{ inputs.cucumber_tag }}"
+
+      - name: Archive Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.env_name }}-test-reports
+          path: |
+            reports/
+            reports/screenshots/
