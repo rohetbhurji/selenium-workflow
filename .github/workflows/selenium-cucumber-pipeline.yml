@@ -1,0 +1,57 @@
+name: Selenium with Cucumber Pipeline
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+  repository_dispatch:
+    types: [approval_received]
+
+jobs:
+  build-and-test-dev:
+    uses: ./.github/workflows/reusable_build_and_test.yml
+    with:
+      env_name: "DEV"
+      cucumber_tag: "@DEV"
+
+  wait-for-approval-dev:
+    needs: build-and-test-dev
+    uses: ./.github/workflows/reusable_approval.yml
+    with:
+      env_name: "DEV"
+    
+  build-and-test-sit:
+    needs: wait-for-approval-dev
+    uses: ./.github/workflows/reusable_build_and_test.yml
+    with:
+      env_name: "SIT"
+      cucumber_tag: "@SIT"
+
+  wait-for-approval-sit:
+    needs: build-and-test-sit
+    uses: ./.github/workflows/reusable_approval.yml
+    with:
+      env_name: "SIT"
+  
+  send-approval-email-dev:
+    needs: build-and-test-dev
+    uses: ./.github/workflows/reusable_send_approval_email.yml
+    with:
+      env_name: "DEV"
+      approval_email: "sankarviswanathan1991@gmail.com"
+      email_subject: "Approval Required: DEV Test Results"
+      email_body: |
+        Test reports for DEV environment are available.
+        Please review and approve it.
+
+  send-approval-email-sit:
+    needs: build-and-test-sit
+    uses: ./.github/workflows/reusable_send_approval_email.yml
+    with:
+      env_name: "SIT"
+      approval_email: "sankarviswanathan1991@gmail.com"
+      email_subject: "Approval Required: SIT Test Results"
+      email_body: |
+        Test reports for SIT environment are available.
+        Please review and approve to complete the workflow.
